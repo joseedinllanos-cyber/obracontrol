@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ObraControl</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#1b1f23;--mut:#4a5158;--bg:#f4f2ec;--card:#fff;--line:#e4e0d5;--g:#17302b;--o:#f2a33a}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+button,input{font:inherit}button{min-height:44px;padding:0 16px;border-radius:8px;border:0;background:var(--g);color:#fff;font-weight:600;cursor:pointer}
+button.alt{background:#fff;color:var(--g);border:1px solid var(--g)}button.o{background:var(--o);color:#1b1f23}
+button:focus-visible,input:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+input{min-height:44px;padding:0 12px;border:1px solid #bdb8aa;border-radius:8px;width:100%}
+main{max-width:1000px;margin:0 auto;padding:24px 16px;display:grid;gap:16px}
+.card{background:var(--card);border-radius:12px;padding:16px}h1{margin:0;font-size:24px}h2{margin:0 0 10px;font-size:17px}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.obras{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.chip{border-radius:12px;padding:3px 10px;font-weight:600;font-size:13px}
+.c0{background:#cdebd3;color:#0e3b1b}.c1{background:#ffe3b8;color:#4a2c00}.c2{background:#f7c9c4;color:#6b0f05}
+.item{padding:10px 0;border-top:1px solid var(--line)}.mut{color:var(--mut);font-size:13px}
+#ans{white-space:pre-wrap;margin-top:12px}[hidden]{display:none!important}
+</style></head><body>
+<!-- Configura estas dos líneas (Project Settings > API) -->
+<script>const SUPABASE_URL="https://TU-REF.supabase.co",SUPABASE_ANON_KEY="TU-ANON-KEY";</script>
+<main id="login" class="card" style="max-width:380px;margin-top:10vh"><h1>ObraControl</h1>
+<p class="mut">Ingresa con tu cuenta de gerente.</p>
+<label>Correo<input id="em" type="email" autocomplete="username"></label><br><br>
+<label>Contraseña<input id="pw" type="password" autocomplete="current-password"></label><br><br>
+<button id="go">Entrar</button><p id="err" class="mut" role="alert"></p></main>
+<main id="app" hidden>
+<div class="row"><div><h1>Estado de mis obras</h1><div class="mut" id="stamp"></div></div><button class="alt" id="out">Salir</button></div>
+<section class="card"><h2>Pregunta a tus obras</h2><div class="row" style="flex-wrap:nowrap">
+<input id="q" placeholder="¿Qué obras están en riesgo esta semana y por qué?" aria-label="Pregunta"><button id="ask">Preguntar</button></div><div id="ans"></div></section>
+<section class="obras" id="obras"></section>
+<section class="card"><h2>Para destrabar</h2><div id="bl"></div></section>
+<section class="card"><h2>Informes diarios</h2><div id="inf"></div></section>
+</main>
+<script>
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY),$=i=>document.getElementById(i);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LV=[["Al día","c0"],["Atención","c1"],["Crítico","c2"]];
+async function load(){
+  const [{data:ps},{data:bl},{data:inf}]=await Promise.all([
+    sb.from("projects").select("id,name").order("name"),
+    sb.from("events").select("id,project_id,type,front,summary,severity,created_at,projects(name)").eq("status","abierto").in("type",["bloqueo","logistica","incidencia"]).order("created_at",{ascending:false}),
+    sb.from("daily_reports").select("id,report_date,html,projects(name)").order("report_date",{ascending:false}).limit(10)]);
+  $("stamp").textContent="Actualizado "+new Date().toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"});
+  $("obras").innerHTML=(ps||[]).map(p=>{const mine=(bl||[]).filter(e=>e.project_id===p.id);
+    const lv=mine.some(e=>e.severity==="alta")?2:mine.length?1:0;
+    return `<div class="card"><div class="row"><b>${esc(p.name)}</b><span class="chip ${LV[lv][1]}">${LV[lv][0]}</span></div><div class="mut">${mine.length} abiertos</div></div>`}).join("")||`<div class="card">Aún no hay obras. Crea una y vincula el WhatsApp del residente.</div>`;
+  $("bl").innerHTML=(bl||[]).map(e=>`<div class="item row"><div><b>${esc(e.projects?.name)}${e.front?" · "+esc(e.front):""}</b><br>${esc(e.summary)}<div class="mut">${new Date(e.created_at).toLocaleDateString("es-PE")}</div></div><button class="alt" data-r="${e.id}">Marcar resuelto</button></div>`).join("")||`<div class="mut">Nada pendiente. Las obras fluyen.</div>`;
+  $("inf").innerHTML=(inf||[]).map(r=>`<div class="item row"><span>${esc(r.projects?.name)} · ${r.report_date}</span><button class="alt" data-i="${r.id}">Abrir / imprimir</button></div>`).join("")||`<div class="mut">Los informes aparecen cada día a las 6 p. m.</div>`;
+  window._inf=inf||[];
+}
+document.addEventListener("click",async e=>{
+  const r=e.target.dataset?.r,i=e.target.dataset?.i;
+  if(r){await sb.from("events").update({status:"resuelto"}).eq("id",r);load()}
+  if(i){const w=window.open("","_blank");w.document.write(window._inf.find(x=>x.id===i).html);w.document.close()}
+});
+async function show(){const{data:{session}}=await sb.auth.getSession();$("login").hidden=!!session;$("app").hidden=!session;if(session)load()}
+$("go").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("em").value,password:$("pw").value});$("err").textContent=error?"Correo o contraseña incorrectos.":"";show()};
+$("out").onclick=async()=>{await sb.auth.signOut();show()};
+$("ask").onclick=async()=>{const q=$("q").value.trim();if(!q)return;$("ans").textContent="Analizando tus obras…";
+  const{data,error}=await sb.functions.invoke("ask",{body:{question:q}});$("ans").textContent=error?"No pude responder. Intenta otra vez.":data.answer};
+$("q").onkeydown=e=>{if(e.key==="Enter")$("ask").click()};
+show();
+</script></body></html>
