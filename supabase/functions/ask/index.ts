@@ -5,7 +5,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   // El JWT del gerente se reenvía: RLS limita los datos a sus obras.
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: req.headers.get("Authorization")! } } });
+    { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
+  // verify_jwt está desactivado (el preflight CORS no lleva token), así que validamos aquí.
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return new Response(JSON.stringify({ answer: "Sesión no válida. Vuelve a entrar." }),
+    { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
   const { question } = await req.json();
   const since = new Date(Date.now() - 14 * 864e5).toISOString();
   const { data: ev } = await sb.from("events")
