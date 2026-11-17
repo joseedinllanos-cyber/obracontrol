@@ -11,15 +11,15 @@ Deno.serve(async (req) => {
   const { data: ev } = await sb.from("events")
     .select("created_at,type,front,summary,severity,status,projects(name)")
     .gte("created_at", since).order("created_at", { ascending: false }).limit(300);
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const SYS = "Eres el analista de obras de un gerente de operaciones en Perú. Responde en español, claro y breve, SOLO con los eventos dados (últimos 14 días). Cita obra y fecha. Si los datos no alcanzan para responder, dilo y no inventes. Cuando haya riesgos, prioriza qué destrabar primero.";
+  const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    headers: { Authorization: `Bearer ${Deno.env.get("OPENROUTER_API_KEY")}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-haiku-5-5", max_tokens: 700,
-      system: "Eres el analista de obras de un gerente de operaciones en Perú. Responde en español, claro y breve, SOLO con los eventos dados (últimos 14 días). Cita obra y fecha. Si los datos no alcanzan para responder, dilo y no inventes. Cuando haya riesgos, prioriza qué destrabar primero.",
-      messages: [{ role: "user", content: `Eventos:\n${JSON.stringify(ev)}\n\nPregunta: ${question}` }],
+      model: Deno.env.get("OPENROUTER_MODEL") ?? "google/gemini-2.5-flash", max_tokens: 700,
+      messages: [{ role: "system", content: SYS }, { role: "user", content: `Eventos:\n${JSON.stringify(ev)}\n\nPregunta: ${question}` }],
     }),
   });
-  const answer = (await r.json()).content?.[0]?.text ?? "No pude responder ahora.";
+  const answer = (await r.json()).choices?.[0]?.message?.content ?? "No pude responder ahora.";
   return new Response(JSON.stringify({ answer }), { headers: { ...cors, "Content-Type": "application/json" } });
 });

@@ -25,27 +25,31 @@ async function media(id: string) {
   return { bytes: new Uint8Array(await r.arrayBuffer()), mime: m.mime_type as string };
 }
 
-async function transcribe(bytes: Uint8Array, mime: string) {
-  const f = new FormData();
-  f.append("file", new Blob([bytes], { type: mime }), "audio.ogg");
-  f.append("model", "whisper-1");
-  f.append("language", "es");
-  f.append("prompt", "Obra en Perú: encofrado, vaciado, bolsas de cemento, fierro, losa, columnas, valorización, maestro de obra, operarios, peones.");
-  const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST", headers: { Authorization: `Bearer ${env("OPENAI_API_KEY")}` }, body: f });
-  return (await r.json()).text as string;
+const OR = "https://openrouter.ai/api/v1";
+const ORH = { Authorization: `Bearer ${env("OPENROUTER_API_KEY")}`, "Content-Type": "application/json" };
+const MODEL = Deno.env.get("OPENROUTER_MODEL") ?? "google/gemini-2.5-flash"; // con visión
+const STT = Deno.env.get("STT_MODEL") ?? "openai/whisper-large-v3";
+
+async function transcribe(bytes: Uint8Array, _mime: string) {
+  const r = await fetch(`${OR}/audio/transcriptions`, {
+    method: "POST", headers: ORH,
+    body: JSON.stringify({ model: STT, input_audio: { data: encodeBase64(bytes), format: "ogg" }, language: "es" }),
+  });
+  const j = await r.json();
+  if (!j.text) throw new Error("STT falló: " + JSON.stringify(j));
+  return j.text as string;
 }
 
 async function extract(text: string, img?: { bytes: Uint8Array; mime: string }) {
   const content: unknown[] = [];
-  if (img) content.push({ type: "image", source: { type: "base64", media_type: img.mime, data: encodeBase64(img.bytes) } });
+  if (img) content.push({ type: "image_url", image_url: { url: `data:${img.mime};base64,${encodeBase64(img.bytes)}` } });
   content.push({ type: "text", text: text || "(solo foto)" });
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1000, system: SYSTEM, messages: [{ role: "user", content }] }),
+  const r = await fetch(`${OR}/chat/completions`, {
+    method: "POST", headers: ORH,
+    body: JSON.stringify({ model: MODEL, max_tokens: 1000, response_format: { type: "json_object" },
+      messages: [{ role: "system", content: SYSTEM }, { role: "user", content }] }),
   });
-  const raw = (await r.json()).content?.[0]?.text ?? "{}";
+  const raw = (await r.json()).choices?.[0]?.message?.content ?? "{}";
   return JSON.parse(raw.replace(/```json|```/g, "").trim());
 }
 

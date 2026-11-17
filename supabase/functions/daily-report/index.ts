@@ -5,12 +5,12 @@ const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&
 const LABEL: Record<string, string> = { avance: "Avance del día", personal: "Personal", bloqueo: "Bloqueos", logistica: "Logística", incidencia: "Incidencias" };
 
 async function claude(prompt: string) {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "x-api-key": env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 500, messages: [{ role: "user", content: prompt }] }),
+    headers: { Authorization: `Bearer ${env("OPENROUTER_API_KEY")}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: Deno.env.get("OPENROUTER_MODEL") ?? "google/gemini-2.5-flash", max_tokens: 500, messages: [{ role: "user", content: prompt }] }),
   });
-  return ((await r.json()).content?.[0]?.text ?? "") as string;
+  return ((await r.json()).choices?.[0]?.message?.content ?? "") as string;
 }
 async function send(to: string, text: string) {
   await fetch(`https://graph.facebook.com/v21.0/${env("WA_PHONE_ID")}/messages`, {
