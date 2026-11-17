@@ -5,56 +5,97 @@
 <style>
 :root{--ink:#1b1f23;--mut:#4a5158;--bg:#f4f2ec;--card:#fff;--line:#e4e0d5;--g:#17302b;--o:#f2a33a}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--bg)}
-button,input{font:inherit}button{min-height:44px;padding:0 16px;border-radius:8px;border:0;background:var(--g);color:#fff;font-weight:600;cursor:pointer}
-button.alt{background:#fff;color:var(--g);border:1px solid var(--g)}button.o{background:var(--o);color:#1b1f23}
-button:focus-visible,input:focus-visible{outline:3px solid var(--o);outline-offset:2px}
-input{min-height:44px;padding:0 12px;border:1px solid #bdb8aa;border-radius:8px;width:100%}
-main{max-width:1000px;margin:0 auto;padding:24px 16px;display:grid;gap:16px}
+button,input,select,a.btn{font:inherit}
+button,a.btn{min-height:44px;padding:0 16px;border-radius:8px;border:0;background:var(--g);color:#fff;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
+.alt{background:#fff!important;color:var(--g)!important;border:1px solid var(--g)!important}.o{background:var(--o)!important;color:#1b1f23!important}
+:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+input,select{min-height:44px;padding:0 12px;border:1px solid #bdb8aa;border-radius:8px;width:100%;background:#fff}
+label{display:block;margin-bottom:14px}
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+.side{background:var(--g);color:#e6f0ec;padding:20px 14px;display:flex;flex-direction:column;gap:6px}
+.side b{font-size:17px;margin:0 8px 16px}
+.nav{background:none;color:#e6f0ec;justify-content:flex-start;width:100%;font-weight:500}.nav.on{background:var(--o);color:#1b1f23;font-weight:700}
+.side .sp{flex:1}.side .out{background:none;color:#e6f0ec;border:1px solid #4d6a62;justify-content:center}
+main{padding:24px 28px;display:grid;gap:16px;align-content:start;max-width:1100px;width:100%}
 .card{background:var(--card);border-radius:12px;padding:16px}h1{margin:0;font-size:24px}h2{margin:0 0 10px;font-size:17px}
-.row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.obras{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.chip{border-radius:12px;padding:3px 10px;font-weight:600;font-size:13px}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.mut{color:var(--mut);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.kpis b{font-size:30px;display:block}
+.chip{border-radius:12px;padding:3px 10px;font-weight:600;font-size:13px;white-space:nowrap}
 .c0{background:#cdebd3;color:#0e3b1b}.c1{background:#ffe3b8;color:#4a2c00}.c2{background:#f7c9c4;color:#6b0f05}
-.item{padding:10px 0;border-top:1px solid var(--line)}.mut{color:var(--mut);font-size:13px}
-label{display:block;margin-bottom:14px}#login button{width:100%}#ans{white-space:pre-wrap;margin-top:12px}[hidden]{display:none!important}
+.item{padding:12px 0;border-top:1px solid var(--line)}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#d9d4c6}
+#ans{white-space:pre-wrap;margin-top:12px}[hidden]{display:none!important}
+#login{max-width:380px;margin:10vh auto}#login button{width:100%;justify-content:center}
+@media(max-width:760px){.shell{grid-template-columns:1fr}.side{flex-direction:row;overflow-x:auto;padding:10px}.side b,.side .sp{display:none}.nav{width:auto;white-space:nowrap}main{padding:16px}}
 </style></head><body>
-<!-- Pega tu Publishable key (Project Settings > API Keys). Nunca la secret key. -->
 <script>const SUPABASE_URL="https://ktpwyoazswmqsniajgvr.supabase.co",SUPABASE_ANON_KEY="sb_publishable_KsvRgabfEEXM9VCkdtoFOQ_y_aIDbJ8";</script>
-<main id="login" class="card" style="max-width:380px;margin-top:10vh"><h1>ObraControl</h1>
-<p class="mut">Ingresa con tu cuenta de gerente.</p>
+<div id="login" class="card"><h1>ObraControl</h1><p class="mut">Ingresa con tu cuenta de gerente.</p>
 <label>Correo<input id="em" type="email" autocomplete="username"></label>
 <label>Contraseña<input id="pw" type="password" autocomplete="current-password"></label>
-<button id="go">Entrar</button><p id="err" class="mut" role="alert"></p></main>
-<main id="app" hidden>
-<div class="row"><div><h1>Estado de mis obras</h1><div class="mut" id="stamp"></div></div><button class="alt" id="out">Salir</button></div>
-<section class="card"><h2>Pregunta a tus obras</h2><div class="row" style="flex-wrap:nowrap">
-<input id="q" placeholder="¿Qué obras están en riesgo esta semana y por qué?" aria-label="Pregunta"><button id="ask">Preguntar</button></div><div id="ans"></div></section>
-<section class="obras" id="obras"></section>
-<section class="card"><h2>Para destrabar</h2><div id="bl"></div></section>
-<section class="card"><h2>Informes diarios</h2><div id="inf"></div></section>
-</main>
+<button id="go">Entrar</button><p id="err" class="mut" role="alert"></p></div>
+<div class="shell" id="app" hidden>
+<nav class="side" aria-label="Secciones"><b>ObraControl</b>
+<button class="nav on" data-v="res">Resumen</button><button class="nav" data-v="obr">Obras</button>
+<button class="nav" data-v="fot">Evidencia</button><button class="nav" data-v="inf">Informes</button>
+<span class="sp"></span><button class="out" id="out">Salir</button></nav>
+<main>
+<section id="v-res" class="view">
+<div><h1>Estado de mis obras</h1><div class="mut" id="stamp"></div></div>
+<div class="kpis" id="kpis"></div>
+<div class="card"><h2>Pregunta a tus obras</h2><div class="row" style="flex-wrap:nowrap"><input id="q" placeholder="¿Qué obras están en riesgo esta semana y por qué?" aria-label="Pregunta"><button id="ask">Preguntar</button></div><div id="ans"></div></div>
+<div class="card"><h2>Semáforo por obra</h2><div id="sem"></div></div>
+<div class="card"><h2>Para destrabar</h2><div id="bl"></div></div>
+</section>
+<section id="v-obr" class="view" hidden><h1>Obras y residentes</h1>
+<div class="card"><h2>Nueva obra</h2><div class="row" style="flex-wrap:nowrap"><input id="pn" placeholder="Nombre de la obra" aria-label="Nombre de la obra"><button id="addp">Crear</button></div></div>
+<div class="card"><h2>Vincular WhatsApp de un residente</h2>
+<label>Obra<select id="ps"></select></label><label>Nombre<input id="rn" placeholder="Ej. Ing. Pérez"></label>
+<label>Número de WhatsApp<input id="rp" placeholder="987654321 o +51987654321" inputmode="tel"></label>
+<button id="addr">Vincular</button><p id="msg" class="mut" role="status"></p></div>
+<div class="card"><h2>Residentes vinculados</h2><div id="rl"></div></div></section>
+<section id="v-fot" class="view" hidden><h1>Evidencia fotográfica</h1><div class="card"><div class="grid" id="fg"></div></div></section>
+<section id="v-inf" class="view" hidden><h1>Informes diarios</h1><div class="card" id="il"></div></section>
+</main></div>
 <script>
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY),$=i=>document.getElementById(i);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const LV=[["Al día","c0"],["Atención","c1"],["Crítico","c2"]];
+const LV=[["Al día","c0"],["Atención","c1"],["Crítico","c2"]],S={inf:[]};
+const fmt=d=>new Date(d).toLocaleDateString("es-PE");
 async function load(){
-  const [{data:ps},{data:bl},{data:inf}]=await Promise.all([
+  const day=new Date(Date.now()-5*36e5).toISOString().slice(0,10);
+  const [p,b,i,m,ph,ev]=await Promise.all([
     sb.from("projects").select("id,name").order("name"),
     sb.from("events").select("id,project_id,type,front,summary,severity,created_at,projects(name)").eq("status","abierto").in("type",["bloqueo","logistica","incidencia"]).order("created_at",{ascending:false}),
-    sb.from("daily_reports").select("id,report_date,html,projects(name)").order("report_date",{ascending:false}).limit(10)]);
+    sb.from("daily_reports").select("id,report_date,html,projects(name)").order("report_date",{ascending:false}).limit(15),
+    sb.from("messages").select("id",{count:"exact",head:true}).gte("created_at",day+"T05:00:00Z"),
+    sb.from("phone_links").select("phone,person_name,projects(name)"),
+    sb.from("events").select("id,front,summary,media_path,created_at,projects(name)").like("media_path","%.jpg").order("created_at",{ascending:false}).limit(24)]);
+  const ps=p.data||[],bl=b.data||[];S.inf=i.data||[];
   $("stamp").textContent="Actualizado "+new Date().toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"});
-  $("obras").innerHTML=(ps||[]).map(p=>{const mine=(bl||[]).filter(e=>e.project_id===p.id);
-    const lv=mine.some(e=>e.severity==="alta")?2:mine.length?1:0;
-    return `<div class="card"><div class="row"><b>${esc(p.name)}</b><span class="chip ${LV[lv][1]}">${LV[lv][0]}</span></div><div class="mut">${mine.length} abiertos</div></div>`}).join("")||`<div class="card">Aún no hay obras. Crea una y vincula el WhatsApp del residente.</div>`;
-  $("bl").innerHTML=(bl||[]).map(e=>`<div class="item row"><div><b>${esc(e.projects?.name)}${e.front?" · "+esc(e.front):""}</b><br>${esc(e.summary)}<div class="mut">${new Date(e.created_at).toLocaleDateString("es-PE")}</div></div><button class="alt" data-r="${e.id}">Marcar resuelto</button></div>`).join("")||`<div class="mut">Nada pendiente. Las obras fluyen.</div>`;
-  $("inf").innerHTML=(inf||[]).map(r=>`<div class="item row"><span>${esc(r.projects?.name)} · ${r.report_date}</span><button class="alt" data-i="${r.id}">Abrir / imprimir</button></div>`).join("")||`<div class="mut">Los informes aparecen cada día a las 6 p. m.</div>`;
-  window._inf=inf||[];
+  const urg=bl.filter(e=>e.type==="logistica"&&e.severity!=="baja").length;
+  $("kpis").innerHTML=[["Obras activas",ps.length],["Bloqueos abiertos",bl.length],["Pedidos urgentes",urg],["Reportes hoy",m.count??0]].map(k=>`<div class="card"><span class="mut">${k[0]}</span><b>${k[1]}</b></div>`).join("");
+  $("sem").innerHTML=ps.map(p=>{const mine=bl.filter(e=>e.project_id===p.id),lv=mine.some(e=>e.severity==="alta")?2:mine.length?1:0;
+    return `<div class="item row"><div><b>${esc(p.name)}</b><div class="mut">${mine[0]?esc(mine[0].summary):"Sin incidencias"}</div></div><span class="chip ${LV[lv][1]}">${LV[lv][0]}</span></div>`}).join("")||`<div class="mut">Crea tu primera obra en la sección Obras.</div>`;
+  $("bl").innerHTML=bl.map(e=>`<div class="item row"><div><b>${esc(e.projects?.name)}${e.front?" · "+esc(e.front):""}</b><br>${esc(e.summary)}<div class="mut">${fmt(e.created_at)}</div></div>
+    <div class="row"><a class="btn o" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Urgente · "+(e.projects?.name||"")+": "+e.summary)}">Avisar a Compras</a><button class="alt" data-r="${e.id}">Marcar resuelto</button></div></div>`).join("")||`<div class="mut">Nada pendiente. Las obras fluyen.</div>`;
+  $("ps").innerHTML=ps.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  $("rl").innerHTML=(ph.data||[]).map(r=>`<div class="item"><b>${esc(r.person_name||"Residente")}</b> · +${esc(r.phone)}<div class="mut">${esc(r.projects?.name)}</div></div>`).join("")||`<div class="mut">Aún no hay residentes vinculados.</div>`;
+  $("il").innerHTML=S.inf.map(r=>`<div class="item row"><span>${esc(r.projects?.name)} · ${r.report_date}</span><button class="alt" data-i="${r.id}">Abrir / imprimir</button></div>`).join("")||`<div class="mut">Los informes aparecen cada día a las 6 p. m.</div>`;
+  const evs=ev.data||[],paths=evs.map(e=>e.media_path);
+  const su=paths.length?(await sb.storage.from("obra").createSignedUrls(paths,3600)).data||[]:[];
+  $("fg").innerHTML=evs.map((e,k)=>`<figure style="margin:0"><img loading="lazy" alt="${esc(e.summary)}" src="${su[k]?.signedUrl||""}"><figcaption class="mut">${esc(e.projects?.name)}${e.front?" · "+esc(e.front):""} · ${fmt(e.created_at)}<br>${esc(e.summary)}</figcaption></figure>`).join("")||`<div class="mut">Las fotos que envíen los residentes aparecen aquí con fecha y frente.</div>`;
 }
 document.addEventListener("click",async e=>{
-  const r=e.target.dataset?.r,i=e.target.dataset?.i;
+  const t=e.target,r=t.dataset?.r,i=t.dataset?.i,v=t.dataset?.v;
+  if(v){document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("on",n===t));document.querySelectorAll(".view").forEach(s=>s.hidden=s.id!=="v-"+v)}
   if(r){await sb.from("events").update({status:"resuelto"}).eq("id",r);load()}
-  if(i){const w=window.open("","_blank");w.document.write(window._inf.find(x=>x.id===i).html);w.document.close()}
+  if(i){const w=window.open("","_blank");w.document.write(S.inf.find(x=>x.id===i).html);w.document.close()}
 });
+$("addp").onclick=async()=>{const n=$("pn").value.trim();if(!n)return;const{error}=await sb.from("projects").insert({name:n});$("pn").value="";if(!error)load()};
+$("addr").onclick=async()=>{let ph=$("rp").value.replace(/\D/g,"");if(ph.length===9)ph="51"+ph;
+  if(ph.length<10||!$("ps").value){$("msg").textContent="Revisa el número y la obra.";return}
+  const{error}=await sb.from("phone_links").insert({phone:ph,project_id:$("ps").value,person_name:$("rn").value.trim()||null});
+  $("msg").textContent=error?"No se pudo vincular (¿el número ya está en otra obra?).":"Vinculado.";if(!error){$("rp").value="";$("rn").value="";load()}};
 async function show(){const{data:{session}}=await sb.auth.getSession();$("login").hidden=!!session;$("app").hidden=!session;if(session)load()}
 $("go").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("em").value,password:$("pw").value});$("err").textContent=error?"Correo o contraseña incorrectos.":"";show()};
 $("out").onclick=async()=>{await sb.auth.signOut();show()};
